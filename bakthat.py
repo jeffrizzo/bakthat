@@ -70,7 +70,13 @@ class S3Backend:
         con = boto.connect_s3(access_key, secret_key)
         if region_name == DEFAULT_LOCATION:
             region_name = ""
-        self.bucket = con.create_bucket(bucket, location=region_name)
+        try:
+            self.bucket = con.get_bucket(bucket, validate=True)
+        except S3ResponseError, e:
+            if e.code == "NoSuchBucket":
+                self.bucket = con.create_bucket(bucket, location=region_name)
+            else:
+                raise e
         self.container = "S3 Bucket: {}".format(bucket)
 
     def download(self, keyname):
